@@ -14,18 +14,13 @@ class InstallData implements InstallDataInterface
 {
 
     private $sampleDataContext;
-    private $product;
+    private $productFactory;
     private $state;
-    private $index;
-    private $objectManager;
 
 
     public function __construct(\Magento\Framework\Setup\SampleData\Context $sampleDataContext,
-                                \Magento\Store\Model\Store $storeView,
                                 \Magento\Catalog\Model\ProductFactory $productFactory,
-                                \Magento\Framework\App\State $state,
-                                \Magento\Indexer\Model\Processor $index,
-                                \Magento\Framework\ObjectManagerInterface   $objectManager)
+                                \Magento\Framework\App\State $state)
     {
 
         try{
@@ -38,32 +33,35 @@ class InstallData implements InstallDataInterface
         $this->fixtureManager = $sampleDataContext->getFixtureManager();
         $this->csvReader = $sampleDataContext->getCsvReader();
         $this->productFactory = $productFactory;
-        $this->index = $index;
-        $this->objectManager=$objectManager;
 
     }
 
     public function install(ModuleDataSetupInterface $setup, ModuleContextInterface $context)
     {
 
-        //get product file
         $_fileName = $this->fixtureManager->getFixture('MagentoEse_ProductSampleDataUpdate::fixtures/Products.csv');
         $_rows = $this->csvReader->getData($_fileName);
 
         $_header = array_shift($_rows);
-        $_productsArray = array();
+
         foreach ($_rows as $_row) {
-            $_productsArray[] = array_combine($_header, $_row);
+
+            $_product = $this->productFactory->create();
+            $_data = [];
+            foreach ($_row as $_key => $_value) {
+                $_data[$_header[$_key]] = $_value;
+            }
+            $_row = $_data;
+            $_product->load($_product->getIdBySku($_row['sku']));
+            $_product->setName($_row['name']);
+
+            try {
+                $_product->save();
+            } catch (Exception $e) {
+                echo $_row['sku'] . "Failed\n";
+            }
+            unset($_product);
+
         }
-        $this->importerModel  = $this->objectManager->create('MagentoEse\ProductSampleDataUpdate\Model\Importer');
-        try {
-            $this->importerModel->processImport($_productsArray);
-        } catch (\Exception $e) {
-            print_r($e->getMessage());
-       }
-
-        print_r($this->importerModel->getLogTrace());
-        print_r($this->importerModel->getErrorMessages());
-
     }
 }
