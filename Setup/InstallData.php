@@ -1,67 +1,35 @@
 <?php
-
+/**
+ * Copyright © 2016 Magento. All rights reserved.
+ * See COPYING.txt for license details.
+ */
 namespace MagentoEse\ProductSampleDataUpdate\Setup;
 
-use Magento\Framework\Setup\InstallDataInterface;
-use Magento\Framework\Setup\ModuleContextInterface;
-use Magento\Framework\Setup\ModuleDataSetupInterface;
+use Magento\Framework\Setup;
 
+class InstallData implements Setup\InstallDataInterface
+{
+    /**
+     * @var Setup\SampleData\Executor
+     */
+    protected $executor;
 
     /**
- * @codeCoverageIgnore
- */
-class InstallData implements InstallDataInterface
-{
+     * @var Installer
+     */
+    protected $installer;
 
-    private $sampleDataContext;
-    private $productFactory;
-    private $state;
-
-
-    public function __construct(\Magento\Framework\Setup\SampleData\Context $sampleDataContext,
-                                \Magento\Catalog\Model\ProductFactory $productFactory,
-                                \Magento\Framework\App\State $state)
+    public function __construct(Setup\SampleData\Executor $executor, Installer $installer)
     {
-
-        try{
-            $state->setAreaCode('adminhtml');
-        }
-        catch(\Magento\Framework\Exception\LocalizedException $e){
-            // left empty
-        }
-
-        $this->fixtureManager = $sampleDataContext->getFixtureManager();
-        $this->csvReader = $sampleDataContext->getCsvReader();
-        $this->productFactory = $productFactory;
-
+        $this->executor = $executor;
+        $this->installer = $installer;
     }
 
-    public function install(ModuleDataSetupInterface $setup, ModuleContextInterface $context)
+    /**
+     * {@inheritdoc}
+     */
+    public function install(Setup\ModuleDataSetupInterface $setup, Setup\ModuleContextInterface $moduleContext)
     {
-
-        $_fileName = $this->fixtureManager->getFixture('MagentoEse_ProductSampleDataUpdate::fixtures/Products.csv');
-        $_rows = $this->csvReader->getData($_fileName);
-
-        $_header = array_shift($_rows);
-
-        foreach ($_rows as $_row) {
-
-            $_product = $this->productFactory->create();
-            $_data = [];
-            foreach ($_row as $_key => $_value) {
-                $_data[$_header[$_key]] = $_value;
-            }
-            $_row = $_data;
-            $_product->load($_product->getIdBySku($_row['sku']));
-            $_product->setName($_row['name']);
-
-            try {
-                $_product->save();
-            } catch (Exception $e) {
-                echo $_row['sku'] . "Failed\n";
-            }
-            unset($_product);
-
-        }
+        $this->executor->exec($this->installer);
     }
 }
