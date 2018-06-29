@@ -8,6 +8,6 @@
         }
     },
     "require": {
-      "firegento/fastsimpleimport": "dev-updated"
+      "firegento/fastsimpleimport": "*"
     }
 }
