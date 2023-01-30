@@ -1,6 +1,11 @@
 {
     "name": "magentoese/module-product-sample-data-update",
     "type": "magento2-module",
+    "version": "2.0.0",
+    "require": {
+        "magento/framework": "*",
+        "magentoese/module-data-install": "*"
+    },
      "autoload": {
         "files": [ "registration.php" ],
         "psr-4": {
